@@ -1,0 +1,13 @@
+Nagios check script for checking replication issues on solr slaves.
+
+We simply get the index version that the core reports it has, and
+then query the maximum possible index version the master has told the core about.
+
+OPTIONS:
+
+-H : hostname/ip of the solr server we want to query
+-p : tcp port solr is listening on
+-w : webapp path
+
+EXAMPLE: ./check_solr_rep.py -H localhost -p 8093 -w webapp -r -P
+
