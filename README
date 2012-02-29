@@ -1,15 +1,9 @@
 Nagios check script for checking the ping status of solr cores and the replication status if a solr slave 
 
-We simply get the index version that the core reports it has, and
-then query the maximum possible index version the master has told the core about.
-
-
 This plugin is in it's early stages, so improvements are welcome, it assumes you're 
 running a multicore setup, and will iterate through all of them getting the ping status
 if you use -P and/or the replication status if you're checking a slave and pass -r on
 the command line.
-
-There's probably better ways to decide whether an error is a WARN or CRIT, those changes will come in time...
 
 *****************
 
@@ -18,7 +12,12 @@ OPTIONS:
 -H : hostname/ip of the solr server we want to query
 -p : tcp port solr is listening on
 -w : webapp path
+-P : ping the solr cores on given webapp (not to be used with replication check)
+-r : check replication on the given webapp (not to be used with ping check)
+-w : delta between master and local replication version, to warn on (default 1)
+-c : delta between master and local replication version, to crit on (defualt 2)
+-i : ignore a core, use multiple times to ignore multiple cores.
 
-EXAMPLE: ./check_solr_rep.py -H localhost -p 8093 -w webapp -r -P
+EXAMPLE: ./check_solr_rep.py -H localhost -p 8093 -w solr -r -w 10 -c 20
 
 *****************
