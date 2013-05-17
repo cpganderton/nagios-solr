@@ -11,14 +11,14 @@ OPTIONS:
 
 -H : hostname/ip of the solr server we want to query
 -p : tcp port solr is listening on
--w : webapp path
+-W : webapp path
 -P : ping the solr cores on given webapp (not to be used with replication check)
 -r : check replication on the given webapp (not to be used with ping check)
 -w : delta between master and local replication version, to warn on (default 1)
 -c : delta between master and local replication version, to crit on (defualt 2)
 -i : ignore a core, use multiple times to ignore multiple cores.
 
-EXAMPLE: ./check_solr_rep.py -H localhost -p 8093 -w solr -r -w 10 -c 20
+EXAMPLE: ./check_solr_rep.py -H localhost -p 8093 -W solr -r -w 10 -c 20
 
 '''
 import urllib, json, sys
