@@ -26,7 +26,7 @@ from optparse import OptionParser
 
 def listcores():
     status_cmd  = baseurl + core_admin_url + urllib.urlencode({'action':'status','wt':'json'})
-    cores       = []
+    cores       = set()
 
     res         = urllib.urlopen(status_cmd)
     data        = json.loads(res.read())
@@ -34,7 +34,7 @@ def listcores():
     core_data   = data['status']
 
     for core_name in core_data:
-        cores.append(core_name)
+        cores.add(core_name)
 
     return cores
 
@@ -110,18 +110,18 @@ def main():
     check_replication   = cmd_options.check_replication
     threshold_warn      = cmd_options.threshold_warn
     threshold_crit      = cmd_options.threshold_crit
-    ignore_cores        = cmd_options.ignore_cores
+    ignore_cores        = set(cmd_options.ignore_cores)
 
     core_admin_url      = 'admin/cores?'
     baseurl             = 'http://' + solr_server + ':' + solr_server_port + '/' +  solr_server_webapp + '/'
 
-    repwarn             = []
-    repcrit             = []
+    repwarn             = set()
+    repcrit             = set()
 
-    pingerrors          = []
+    pingerrors          = set()
 
     try:
-        cores = listcores()
+        all_cores = listcores()
     except IOError as (errno, strerror):
         print "CRITICAL: {0} - {1}".format(errno,strerror)
         return(2)
@@ -132,20 +132,20 @@ def main():
         print "CRITICAL: Unknown error" 
         return(3)
 
+    cores = all_cores - ignore_cores
+
     # XXX: This is ugly...
     try:
         for core in cores:
-            if core in ignore_cores:
-                continue 
             if check_replication:
                 ret = repstatus(core)
                 if ret == 'CRITICAL':
-                    repcrit.append(core)
+                    repcrit.add(core)
                 elif ret == 'WARNING':
-                    repwarn.append(core)
+                    repwarn.add(core)
             if check_ping:
                 if solrping(core) != 'OK':
-                    pingerrors.append(core)
+                    pingerrors.add(core)
     except IOError as (errno, strerror):
         print "CRITICAL: {0} {1} ".format(errno, strerror)
         return(2)
@@ -159,19 +159,16 @@ def main():
             return(3)
     
     if pingerrors:
-        print "CRITICAL: error pinging core(s) - ",
-        print ", ".join(pingerrors)
+        print "CRITICAL: Error pinging cores(s) - {0}. Tested core(s) - {1} |TotalOKCores={2}".format(", ".join(pingerrors), ", ".join(cores), len(cores-pingerrors))
         return(2)
     elif repcrit:
-        print "CRITICAL: replication errors on core(s) -",
-        print ", ".join(repcrit)
+        print "CRITICAL: Replication errors on cores(s) - {0}. Tested core(s) - {1} |TotalOKCores={2}".format(", ".join(repcrit), ", ".join(cores), len(cores-repcrit))
         return(2)
     elif repwarn:
-        print "WARNING: replication errors on core(s) -",
-        print ", ".join(repwarn)
+        print "WARNING: Replication errors on cores(s) - {0}. Tested core(s) - {1} |TotalOKCores={2}".format(", ".join(repwarn), ", ".join(cores), len(cores-repwarn))
         return(1)
     else:
-        print "OK: no issues"
+        print "OK. Tested core(s) - {0} |TotalOKCores={1}".format(", ".join(cores), len(cores))
         return(0)
 
 if __name__ == '__main__':
