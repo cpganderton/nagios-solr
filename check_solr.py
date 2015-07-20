@@ -64,9 +64,16 @@ def repstatus(core):
 
 def solrping(core):
     ping_cmd = baseurl + core + '/admin/ping?' + urllib.urlencode({'wt':'json'})
-    
+
     res = urllib.urlopen(ping_cmd)
-    data = json.loads(res.read())
+    jsondata = res.read();
+
+    if jsondata == False:
+        return "CRITICAL"
+    try:
+        data = json.loads(jsondata)
+    except ValueError, e:
+        return "CRITICAL"
 
     status = data.get('status')
 
