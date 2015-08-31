@@ -45,7 +45,7 @@ def repstatus(core):
     rdata       = json.loads(rres.read())
 
     localgeneration  = rdata['details'].get('generation')
-    mastergeneration = rdata['details']['slave']['masterDetails']['master'].get('replicatableGeneration')
+    mastergeneration = rdata['details']['slave']['masterDetails']['master'].get('replicableGeneration')
 
     if mastergeneration == None or localgeneration == None:
         status = "CRITICAL"
