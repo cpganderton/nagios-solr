@@ -64,9 +64,16 @@ def repstatus(core):
 
 def solrping(core):
     ping_cmd = baseurl + core + '/admin/ping?' + urllib.urlencode({'wt':'json'})
-    
+
     res = urllib.urlopen(ping_cmd)
-    data = json.loads(res.read())
+    jsondata = res.read();
+
+    if jsondata == False:
+        return "CRITICAL"
+    try:
+        data = json.loads(jsondata)
+    except ValueError, e:
+        return "CRITICAL"
 
     status = data.get('status')
 
@@ -83,6 +90,7 @@ def main():
     cmd_parser.add_option("-r", "--replication", action="store_true", dest="check_replication", help="SOLR Replication check", default=False)
     cmd_parser.add_option("-w", "--warn", type="int", action="store", dest="threshold_warn", help="WARN threshold for replication check", default=1)
     cmd_parser.add_option("-c", "--critical", type="int", action="store", dest="threshold_crit", help="CRIT threshold for replication check", default=2)
+    cmd_parser.add_option("-C", "--core", type="string", action="append", dest="cores_override", help="SOLR Cores to check (autodetection used when this is omitted)", default=[])
     cmd_parser.add_option("-i", "--ignore", type="string", action="append", dest="ignore_cores", help="SOLR Cores to ignore", default=[])
 
     (cmd_options, cmd_args) = cmd_parser.parse_args()
@@ -110,6 +118,7 @@ def main():
     check_replication   = cmd_options.check_replication
     threshold_warn      = cmd_options.threshold_warn
     threshold_crit      = cmd_options.threshold_crit
+    cores_override      = set(cmd_options.cores_override)
     ignore_cores        = set(cmd_options.ignore_cores)
 
     core_admin_url      = 'admin/cores?'
@@ -120,17 +129,20 @@ def main():
 
     pingerrors          = set()
 
-    try:
-        all_cores = listcores()
-    except IOError as (errno, strerror):
-        print "CRITICAL: {0} - {1}".format(errno,strerror)
-        return(2)
-    except (ValueError, TypeError):
-        print "CRITICAL: probably couldn't format JSON data, check SOLR is ok"
-        return(3)
-    except:
-        print "CRITICAL: Unknown error" 
-        return(3)
+    if cores_override:
+        all_cores = cores_override
+    else:
+        try:
+            all_cores = listcores()
+        except IOError as (errno, strerror):
+            print "CRITICAL: {0} - {1}".format(errno,strerror)
+            return(2)
+        except (ValueError, TypeError):
+            print "CRITICAL: probably couldn't format JSON data, check SOLR is ok"
+            return(3)
+        except:
+            print "CRITICAL: Unknown error" 
+            return(3)
 
     cores = all_cores - ignore_cores
 
