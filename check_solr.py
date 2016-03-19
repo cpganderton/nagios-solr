@@ -38,6 +38,14 @@ def listcores():
 
     return cores
 
+def version(core):
+    ver_cmd     = rep_cmd     = baseurl + core + '/admin/system?' + urllib.urlencode({'wt':'json'})
+
+    rres        = urllib.urlopen(ver_cmd)
+    rdata       = json.loads(rres.read())
+    version_number     = rdata['lucene']['solr-spec-version'].split()[0]
+    return version_number
+
 def repstatus(core):
     rep_cmd     = baseurl + core + '/replication?' + urllib.urlencode({'command':'details','wt':'json'})
 
@@ -45,7 +53,11 @@ def repstatus(core):
     rdata       = json.loads(rres.read())
 
     localgeneration  = rdata['details'].get('generation')
-    mastergeneration = rdata['details']['slave']['masterDetails']['master'].get('replicableGeneration')
+
+    if version(core).startswith('4'):
+        mastergeneration = rdata['details']['slave']['masterDetails']['master'].get('replicableGeneration')
+    else:
+        mastergeneration = rdata['details']['slave']['masterDetails']['master'].get('replicatableGeneration')
 
     if mastergeneration == None or localgeneration == None:
         status = "CRITICAL"
@@ -185,4 +197,4 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
-    
+
